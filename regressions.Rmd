@@ -1,0 +1,359 @@
+---
+title: "Regressions"
+output: html_notebook
+---
+# Packages
+```{r}
+library(gtsummary)
+```
+# Parental and school influence
+```{r}
+# Reorder levels of parent_influence variable
+interest_clean$parent_influence <- factor(interest_clean$parent_influence, 
+                                          levels = c("Never or hardly ever", 
+                                                     "Once or twice a year", 
+                                                     "Once or twice a month", 
+                                                     "Once or twice a week", 
+                                                     "Every day or almost every day"))
+
+# Change reference category
+interest_clean$parent_influence <- relevel(interest_clean$parent_influence, ref = "Never or hardly ever")
+
+model1 <- glm(ST222Q08HA ~ parent_influence + ST221Q05HA + ST221Q07HA + SES + gender + AGE + school_public, data = interest_clean, family = binomial)
+
+model2 <- glm(ST222Q09HA ~ parent_influence + ST221Q05HA + ST221Q07HA + SES + gender + AGE + school_public, data = interest_clean, family = binomial)
+
+# Tables
+table.model1 <- tbl_regression(model1, 
+                     label = c(parent_influence ~ "Parent incentive",
+                               ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               SES ~ "SES Level",
+                               gender ~ "Gender",
+                               AGE ~ "Age",
+                               school_public ~ "School type"), 
+                     exponentiate = T) %>% 
+   modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "0" & variable == "ST221Q05HA", "No incentive",
+                             ifelse(label =="1" & variable == "ST221Q05HA", "Incentive",label)))) %>% 
+  modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "0" & variable == "ST221Q07HA", "No incentive",
+                             ifelse(label == "1" & variable == "ST221Q07HA", "Incentive",label))))
+
+table.model2 <- tbl_regression(model2, 
+                     label = c(parent_influence ~ "Parent incentive",
+                               ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               SES ~ "SES Level",
+                               gender ~ "Gender",
+                               AGE ~ "Age",
+                               school_public ~ "School type"), 
+                     exponentiate = T) %>% 
+  modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "0" & variable == "ST221Q05HA", "No incentive",
+                             ifelse(label =="1" & variable == "ST221Q05HA", "Incentive",label)))) %>% 
+  modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "0" & variable == "ST221Q07HA", "No incentive",
+                             ifelse(label =="1" & variable == "ST221Q07HA", "Incentive",label))))
+
+# Merged tables
+models <- tbl_merge(
+  tbls = list(table.model1, table.model2),
+  tab_spanner = c("**Model 1: Gender equality**", "**Model 2: Environmental protection**"))
+```
+
+# Interaction: Parental and school incentive
+```{r}
+# Change reference category
+interest_clean$parent_influence <- relevel(interest_clean$parent_influence, ref = "Never or hardly ever")
+
+# Generate interaction table
+interaction.df <- interest_clean %>% 
+  select(ST222Q08HA, ST222Q09HA, parent_influence, ST221Q05HA, ST221Q07HA)
+
+# Add column with interactions
+interaction.df$INT01 <- interaction.df$parent_influence:interaction.df$ST221Q05HA
+interaction.df$INT02 <- interaction.df$parent_influence:interaction.df$ST221Q07HA
+
+# Change reference category
+interaction.df$INT01 <- relevel(interaction.df$INT01, ref="Never or hardly ever:0") 
+interaction.df$INT02 <- relevel(interaction.df$INT02, ref="Never or hardly ever:0")
+
+# Run regression models with interactions
+## Gender equality activities
+interaction1 <- glm(ST222Q08HA ~ INT01, data=interaction.df, family=binomial())
+exp(summary(interaction1)$coefficients)
+
+interaction2 <- glm(ST222Q08HA ~ INT02, data=interaction.df, family=binomial())
+exp(summary(interaction2)$coefficients)
+
+## Environmental protection activities
+interaction3 <- glm(ST222Q09HA ~ INT01, data=interaction.df, family=binomial())
+exp(summary(interaction3)$coefficients)
+
+interaction4 <- glm(ST222Q09HA ~ INT02, data=interaction.df, family=binomial())
+exp(summary(interaction4)$coefficients)
+
+# TABLES
+## Gender equality activities
+t.int1 <- tbl_regression(interaction1, 
+                     label = c(INT01 ~ "Interaction: parental incentive x school share opinion"), 
+                     exponentiate = T) %>% 
+  modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "Never or hardly ever:0", "Never or hardly ever x No incentive",
+                             ifelse(label =="Never or hardly ever:1", "Never or hardly ever x Incentive",label)),
+             label = ifelse(label == "Once or twice a year:0", "Once or twice a year x No incentive",
+                             ifelse(label =="Once or twice a year:1", "Once or twice a year x Incentive",label)),
+             label = ifelse(label == "Once or twice a month:0", "Once or twice a month x No incentive",
+                             ifelse(label =="Once or twice a month:1", "Once or twice a month x Incentive",label)),
+             label = ifelse(label == "Once or twice a week:0", "Once or twice a week x No incentive",
+                             ifelse(label =="Once or twice a week:1", "Once or twice a week x Incentive",label)),
+             label = ifelse(label == "Every day or almost every day:0", "Every day or almost every day x No incentive",
+                             ifelse(label =="Every day or almost every day:1", "Every day or almost every day x Incentive",label))))
+
+t.int2 <- tbl_regression(interaction2, 
+                     label = c(INT02 ~ "Interaction: parental incentive x school discussion"), 
+                     exponentiate = T) %>% 
+  modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "Never or hardly ever:0", "Never or hardly ever x No incentive",
+                             ifelse(label =="Never or hardly ever:1", "Never or hardly ever x Incentive",label)),
+             label = ifelse(label == "Once or twice a year:0", "Once or twice a year x No incentive",
+                             ifelse(label =="Once or twice a year:1", "Once or twice a year x Incentive",label)),
+             label = ifelse(label == "Once or twice a month:0", "Once or twice a month x No incentive",
+                             ifelse(label =="Once or twice a month:1", "Once or twice a month x Incentive",label)),
+             label = ifelse(label == "Once or twice a week:0", "Once or twice a week x No incentive",
+                             ifelse(label =="Once or twice a week:1", "Once or twice a week x Incentive",label)),
+             label = ifelse(label == "Every day or almost every day:0", "Every day or almost every day x No incentive",
+                             ifelse(label =="Every day or almost every day:1", "Every day or almost every day x Incentive",label)))) 
+
+# Merged tables
+models_int1 <- tbl_merge(
+tbls = list(t.int1, t.int2),
+tab_spanner = c("**Model 3**", "**Model 4**"))
+modify_spanning_header(models_int1, label = "Participation in gender equality activities")
+
+## Environmental protection activities
+t.int3 <- tbl_regression(interaction3, 
+                     label = c(INT01 ~ "Interaction: parental incentive x school share opinion"), 
+                     exponentiate = T) %>% 
+  modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "Never or hardly ever:0", "Never or hardly ever x No incentive",
+                             ifelse(label =="Never or hardly ever:1", "Never or hardly ever x Incentive",label)),
+             label = ifelse(label == "Once or twice a year:0", "Once or twice a year x No incentive",
+                             ifelse(label =="Once or twice a year:1", "Once or twice a year x Incentive",label)),
+             label = ifelse(label == "Once or twice a month:0", "Once or twice a month x No incentive",
+                             ifelse(label =="Once or twice a month:1", "Once or twice a month x Incentive",label)),
+             label = ifelse(label == "Once or twice a week:0", "Once or twice a week x No incentive",
+                             ifelse(label =="Once or twice a week:1", "Once or twice a week x Incentive",label)),
+             label = ifelse(label == "Every day or almost every day:0", "Every day or almost every day x No incentive",
+                             ifelse(label =="Every day or almost every day:1", "Every day or almost every day x Incentive",label))))
+
+t.int4 <- tbl_regression(interaction4, 
+                     label = c(INT02 ~ "Interaction: parental incentive x school discussion"), 
+                     exponentiate = T) %>% 
+  modify_table_body( ~.x %>% 
+      mutate(label = ifelse(label == "Never or hardly ever:0", "Never or hardly ever x No incentive",
+                             ifelse(label =="Never or hardly ever:1", "Never or hardly ever x Incentive",label)),
+             label = ifelse(label == "Once or twice a year:0", "Once or twice a year x No incentive",
+                             ifelse(label =="Once or twice a year:1", "Once or twice a year x Incentive",label)),
+             label = ifelse(label == "Once or twice a month:0", "Once or twice a month x No incentive",
+                             ifelse(label =="Once or twice a month:1", "Once or twice a month x Incentive",label)),
+             label = ifelse(label == "Once or twice a week:0", "Once or twice a week x No incentive",
+                             ifelse(label =="Once or twice a week:1", "Once or twice a week x Incentive",label)),
+             label = ifelse(label == "Every day or almost every day:0", "Every day or almost every day x No incentive",
+                             ifelse(label =="Every day or almost every day:1", "Every day or almost every day x Incentive",label)))) 
+
+# Merged tables
+models_int2 <- tbl_merge(
+tbls = list(t.int3, t.int4),
+tab_spanner = c("**Model 5**", "**Model 6**"))
+modify_spanning_header(models_int2, label = "Participation in environmental protection activities")
+```
+
+# Parental incentive and gender equality (stepwise)
+```{r}
+# Model 5: parents incentive in gender equality
+model5 <- glm(ST222Q08HA ~ parent_influence, data = interest_clean, family = binomial)
+
+# Model 6: parents incentive in gender equality + gender
+model6 <- glm(ST222Q08HA ~ parent_influence + gender, data = interest_clean, family = binomial)
+
+# Model 7: parents incentive in gender equality gender + Age
+model7 <- glm(ST222Q08HA ~ parent_influence + gender + AGE, data = interest_clean, family = binomial)
+
+# Model 8: parents incentive in gender equality gender + Age + SES 
+model8 <- glm(ST222Q08HA ~ parent_influence + gender + AGE + school_public, data = interest_clean, family = binomial)
+
+# TABLES
+t5 <- tbl_regression(model5, 
+                     label = c(parent_influence ~ "Parent incentive"), 
+                     exponentiate = T)
+
+t6 <- tbl_regression(model6, 
+                     label = c(parent_influence ~ "Parent incentive", 
+                               gender ~ "Gender"),
+                     exponentiate = T)
+
+t7 <- tbl_regression(model7,
+                     label = c(parent_influence ~ "Parent incentive", 
+                               gender ~ "Gender",
+                               AGE ~ "Age"),
+                     exponentiate = T)
+
+t8 <- tbl_regression(model8, 
+                     label = c(parent_influence ~ "Parent incentive",
+                               gender ~ "Gender",
+                               AGE ~ "Age",
+                               school_public ~ "School type"), 
+                     exponentiate = T)
+
+# Merged tables
+tables3 <- tbl_merge(
+tbls = list(t5, t6, t7, t8),
+tab_spanner = c("**Model 5**", "**Model 6**", "**Model 7**", "**Model 8**"))
+modify_spanning_header(tables3, label = "Participation in gender equality activities")
+```
+
+# Parental incentive and environmental protection (stepwise)
+```{r}
+# Model 9: parents incentive in environmental protection
+model9 <- glm(ST222Q09HA ~ parent_influence, data = interest_clean, family = binomial)
+
+# Model 10: parents incentive in environmental protection + gender
+model10 <- glm(ST222Q09HA ~ parent_influence + gender, data = interest_clean, family = binomial)
+
+# Model 11: parents incentive in environmental protection + gender + Age
+model11 <- glm(ST222Q09HA ~ parent_influence + gender + AGE, data = interest_clean, family = binomial)
+
+# Model 12: parents incentive in environmental protection + Age + SES 
+model12 <- glm(ST222Q09HA ~ parent_influence + gender + AGE + school_public, data = interest_clean, family = binomial)
+
+
+# TABLES
+t9 <- tbl_regression(model9, 
+                     label = c(parent_influence ~ "Parent incentive"), 
+                     exponentiate = T)
+
+t10 <- tbl_regression(model10, 
+                     label = c(parent_influence ~ "Parent incentive", 
+                               gender ~ "Gender"),
+                     exponentiate = T)
+
+t11 <- tbl_regression(model11,
+                     label = c(parent_influence ~ "Parent incentive", 
+                               gender ~ "Gender",
+                               AGE ~ "Age"),
+                     exponentiate = T)
+
+t12 <- tbl_regression(model12, 
+                     label = c(parent_influence ~ "Parent incentive",
+                               gender ~ "Gender",
+                               AGE ~ "Age",
+                               school_public ~ "School type"), 
+                     exponentiate = T)
+
+
+# Merged tables
+tables4 <- tbl_merge(
+tbls = list(t9, t10, t11, t12),
+tab_spanner = c("**Model 9**", "**Model 10**", "**Model 11**", "**Model 12**"))
+modify_spanning_header(tables4, label = "Participation in environmental protection activities")
+```
+
+# School incentive and gender equality (stepwise)
+```{r}
+# Model 13: school incentive in gender equality
+model13 <- glm(ST222Q08HA ~ ST221Q05HA + ST221Q07HA, data = interest_clean, family = binomial)
+
+# Model 14: school incentive in gender equality + gender
+model14 <- glm(ST222Q08HA ~ ST221Q05HA + ST221Q07HA + gender, data = interest_clean, family = binomial)
+
+# Model 15: school incentive in gender equality + gender + Age
+model15 <- glm(ST222Q08HA ~ ST221Q05HA + ST221Q07HA + gender + AGE, data = interest_clean, family = binomial)
+
+# Model 16: school incentive in gender equality + Age + school type 
+model16 <- glm(ST222Q08HA ~ ST221Q05HA + ST221Q07HA + gender + AGE + school_public, data = interest_clean, family = binomial)
+
+
+# TABLES
+t13 <- tbl_regression(model13, 
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions"), 
+                     exponentiate = T)
+
+t14 <- tbl_regression(model14, 
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               gender ~ "Gender"),
+                     exponentiate = T)
+
+t15 <- tbl_regression(model15,
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               gender ~ "Gender",
+                               AGE ~ "Age"),
+                     exponentiate = T)
+
+t16 <- tbl_regression(model16, 
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               gender ~ "Gender",
+                               AGE ~ "Age",
+                               school_public ~ "School type"), 
+                     exponentiate = T)
+
+# Merged tables
+tables5 <- tbl_merge(
+tbls = list(t13, t14, t15, t16),
+tab_spanner = c("**Model 13**", "**Model 14**", "**Model 15**", "**Model 16**"))
+modify_spanning_header(tables5, label = "Participation in gender equality activities")
+```
+
+# School incentive and environmental protection (stepwise)
+```{r}
+# Model 17: school incentive in gender equality
+model17 <- glm(ST222Q09HA ~ ST221Q05HA + ST221Q07HA, data = interest_clean, family = binomial)
+
+# Model 18: school incentive in gender equality + gender
+model18 <- glm(ST222Q09HA ~ ST221Q05HA + ST221Q07HA + gender, data = interest_clean, family = binomial)
+
+# Model 19: school incentive in gender equality + gender + Age
+model19 <- glm(ST222Q09HA ~ ST221Q05HA + ST221Q07HA + gender + AGE, data = interest_clean, family = binomial)
+
+# Model 20: school incentive in gender equality + Age + school type 
+model20 <- glm(ST222Q09HA ~ ST221Q05HA + ST221Q07HA + gender + AGE + school_public, data = interest_clean, family = binomial)
+
+
+# TABLES
+t17 <- tbl_regression(model17, 
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions"), 
+                     exponentiate = T)
+
+t18 <- tbl_regression(model18, 
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               gender ~ "Gender"),
+                     exponentiate = T)
+
+t19 <- tbl_regression(model19,
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               gender ~ "Gender",
+                               AGE ~ "Age"),
+                     exponentiate = T)
+
+t20 <- tbl_regression(model20, 
+                     label = c(ST221Q05HA ~ "School incentive: share opinions",
+                               ST221Q07HA ~ "School incentive: discussions",
+                               gender ~ "Gender",
+                               AGE ~ "Age",
+                               school_public ~ "School type"), 
+                     exponentiate = T)
+
+# Merged tables
+tables6 <- tbl_merge(
+tbls = list(t17, t18, t19, t20),
+tab_spanner = c("**Model 17**", "**Model 18**", "**Model 19**", "**Model 20**"))
+modify_spanning_header(tables6, label = "Participation in environmental protection activities")
+```

@@ -1,0 +1,59 @@
+---
+title: "tables"
+author: "Sany Cruz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Packages
+```{r}
+library(table1)
+```
+
+# Descriptive statistics
+```{r}
+# Change labels
+label(interest_clean$act_gender) <- "Activities gender equality"
+label(interest_clean$act_environment) <- "Activities environmental protection"
+label(interest_clean$parent_influence) <- "Parent discuss politics"
+label(interest_clean$school_discussion) <- "School incentive: discussions"
+label(interest_clean$school_opinion) <- "School incentive: share opinions"
+label(interest_clean$gender) <- "Gender"
+label(interest_clean$AGE) <- "Age"
+label(interest_clean$school_public) <- "School type"
+label(interest_clean$SES) <- "SES level"
+
+# Descriptive stats - Table 1
+table1(~ act_gender + act_environment + parent_influence + school_opinion + school_discussion + gender + AGE + school_public + SES,
+       data = interest_clean,
+       footnote = "Source: PISA (2018); own estimates.",
+       topclass="Rtable1-zebra")
+```
+
+# Cross-tab
+```{r}
+label(interest_clean$act_gender) <- "Activities gender equality"
+label(interest_clean$act_environment) <- "Activities environmental protection"
+label(interest_clean$parent_influence) <- "Parent discuss politics"
+label(interest_clean$school_discussion) <- "School incentive: discussions"
+label(interest_clean$school_opinion) <- "School incentive: share opinions"
+
+table1(~ act_gender + act_environment | parent_influence,
+       data = interest_clean,
+       caption = "Parent discuss politics",
+       footnote = "Source: PISA (2018); own estimates.",
+       topclass="Rtable1-zebra")
+
+table1(~ act_gender + act_environment | school_opinion,
+       data = interest_clean,
+       caption = "School incentive: share opinions",
+       footnote = "Source: PISA (2018); own estimates.",
+       topclass="Rtable1-zebra")
+
+table1(~ act_gender + act_environment | school_discussion,
+       data = interest_clean,
+       caption = "School incentive: discussions",
+       footnote = "Source: PISA (2018); own estimates.",
+       topclass="Rtable1-zebra")
+```
+
+

@@ -1,0 +1,30 @@
+---
+title: "Correlations"
+output: html_notebook
+---
+## Packages
+
+```{r}
+library(corrplot)
+```
+
+# Correlating the questions of the dependent variable
+```{r}
+# Questions in the DV and gender
+corr_dep_var_gender <- subset(students_clean,select=c(ST222Q01HA:ST222Q10HA))
+corrplot(corr=cor(corr_dep_var_gender, 
+                  use="complete.obs",
+                  method = "spearman"),
+         method="number")
+```
+
+# Final variables
+```{r}
+correlations <- subset(interest_clean, select = c(PA003Q05IA, ST221Q05HA, ST221Q07HA, ST222Q08HA, ST222Q09HA))
+corrplot(corr=cor(correlations,
+                  use="complete.obs",
+                  method = "spearman"),
+         method="number")
+```
+
+

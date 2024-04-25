@@ -1,0 +1,108 @@
+---
+title: "plots"
+author: "Sany Cruz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Packages
+```{r}
+library(sjPlot)
+library(ggplot2)
+```
+
+# Forest plots
+```{r}
+## Gender equality activities
+int.plot1 <- plot_model(interaction1,
+           grid = TRUE,
+           order.terms = c(1,8,9,4,5,6,7,2,3),
+                       axis.labels =  c("Every day or almost every day x Incentive",
+                                        "Every day or almost every day x No incentive",
+                                        "Once or twice a week x Incentive",
+                                        "Once or twice a week x No incentive",
+                                        "Once or twice a month x Incentive",
+                                        "Once or twice a month x No incentive",
+                                        "Once or twice a year x Incentive",
+                                        "Once or twice a year x No incentive",
+                                        "Never or hardly ever x Incentive"),
+           vline.color = "black",
+           title = "",
+           show.values = T,
+           colors = "#104E8B") + 
+  ylim(0, 4) + 
+  theme_sjplot()
+
+
+int.plot2 <- plot_model(interaction2,
+           grid = TRUE,
+           order.terms = c(1,8,9,4,5,6,7,2,3),
+                       axis.labels =  c("Every day or almost every day x Incentive",
+                                        "Every day or almost every day x No incentive",
+                                        "Once or twice a week x Incentive",
+                                        "Once or twice a week x No incentive",
+                                        "Once or twice a month x Incentive",
+                                        "Once or twice a month x No incentive",
+                                        "Once or twice a year x Incentive",
+                                        "Once or twice a year x No incentive",
+                                        "Never or hardly ever x Incentive"),
+           vline.color = "black",
+           title = "",
+           show.values = T,
+           colors = "#104E8B") + 
+  ylim(0, 4.5) + 
+  theme_sjplot()
+
+## Environmental protection activities
+int.plot3 <- plot_model(interaction3,
+           grid = TRUE,
+           order.terms = c(1,8,9,4,5,6,7,2,3),
+                       axis.labels =  c("Every day or almost every day x Incentive",
+                                        "Every day or almost every day x No incentive",
+                                        "Once or twice a week x Incentive",
+                                        "Once or twice a week x No incentive",
+                                        "Once or twice a month x Incentive",
+                                        "Once or twice a month x No incentive",
+                                        "Once or twice a year x Incentive",
+                                        "Once or twice a year x No incentive",
+                                        "Never or hardly ever x Incentive"),
+           vline.color = "black",
+           title = "",
+           show.values = T,
+           colors = "#104E8B") + 
+  ylim(0, 4) + 
+  theme_sjplot()
+
+int.plot4 <-plot_model(interaction4,
+           grid = TRUE,
+           order.terms = c(1,8,9,4,5,6,7,2,3),
+                       axis.labels =  c("Every day or almost every day x Incentive",
+                                        "Every day or almost every day x No incentive",
+                                        "Once or twice a week x Incentive",
+                                        "Once or twice a week x No incentive",
+                                        "Once or twice a month x Incentive",
+                                        "Once or twice a month x No incentive",
+                                        "Once or twice a year x Incentive",
+                                        "Once or twice a year x No incentive",
+                                        "Never or hardly ever x Incentive"),
+           vline.color = "black",
+           title = "",
+           show.values = T,
+           colors = "#104E8B") + 
+  ylim(0, 4) + 
+  theme_sjplot()
+```
+
+
+# Checking linearity of ESCS in the model
+```{r}
+interest_clean %>% 
+  ggplot(aes(x = ESCS, y = act_gender)) +
+  geom_violin() +
+  ylab("Interest")
+
+interest_clean %>% 
+  ggplot(aes(x = ESCS, y = act_environment)) +
+  geom_violin() +
+  ylab("Interest")
+```
+

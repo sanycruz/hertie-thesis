@@ -1,0 +1,147 @@
+---
+title: "data_cleaning"
+author: "Sany Cruz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+
+```{r}
+library(dplyr) 
+library(tidyr)
+library(haven)
+library(descr)
+```
+
+## Importing the data sets
+```{r}
+path3 = file.path("/Users/sanny/Library/CloudStorage/OneDrive-Personal/Hertie/Thesis/Data/pisa", "pisa_schools.sav")
+schools = read_sav(path3)
+
+path4 = file.path("/Users/sanny/Library/CloudStorage/OneDrive-Personal/Hertie/Thesis/Data/pisa", "pisa_students.sav")
+students = read_sav(path4)
+```
+
+# Cleaning data according to variables of interest
+```{r}
+# Students
+students_clean <- students %>% 
+  filter(CNT == "BRA") %>% 
+  select(c(CNTSCHID, ST004D01T, ST222Q01HA:ST222Q10HA, ST221Q05HA, ST221Q07HA, PA003Q05IA, ESCS, AGE, IMMIG))
+
+# Schools
+schools_clean <- schools %>% 
+  filter(CNT == "BRA") %>% 
+  drop_na(SC013Q01TA)
+```
+
+# Subseting variables of interest
+```{r}
+# Merge school and students data sets to add school type ("public")
+interest <- merge(students_clean, schools_clean, by = "CNTSCHID")
+
+# Select variables of interest
+interest <- interest %>% 
+  select(c(CNTSCHID, ST004D01T, ST222Q08HA, ST222Q09HA, ST221Q05HA, ST221Q07HA, PA003Q05IA, ESCS, AGE, IMMIG, SC013Q01TA))
+  
+# Remove NAs
+interest_clean <- interest %>%
+  drop_na(CNTSCHID, ST004D01T, ST222Q08HA, ST222Q09HA, ST221Q05HA, ST221Q07HA, PA003Q05IA, ESCS, AGE, SC013Q01TA)
+
+# Finding number of schools
+n_distinct(interest_clean$CNTSCHID)
+```
+
+# Transform variable AGE
+```{r}
+interest_clean$AGE <- as.factor(ifelse(interest_clean$AGE < 16, 15, 16))
+```
+
+# Create variables for tables
+```{r}
+interest_clean$act_gender <- ifelse(interest_clean$ST222Q08HA == 1, "Yes", "No")
+interest_clean$act_environment <- ifelse(interest_clean$ST222Q09HA == 1, "Yes", "No")
+interest_clean$gender <- ifelse(interest_clean$ST004D01T == 2, "Male", "Female")
+interest_clean$school_opinion <- ifelse(interest_clean$ST221Q05HA == 1, "Yes", "No")
+interest_clean$school_discussion <- ifelse(interest_clean$ST221Q07HA == 1, "Yes", "No")
+interest_clean$school_public <- ifelse(interest_clean$SC013Q01TA == 1, "Public", "Private")
+interest_clean$parent_influence <- case_when(interest_clean$PA003Q05IA == 1 ~ "Never or hardly ever",
+                                             interest_clean$PA003Q05IA == 2 ~ "Once or twice a year",
+                                             interest_clean$PA003Q05IA == 3 ~ "Once or twice a month",
+                                             interest_clean$PA003Q05IA == 4 ~ "Once or twice a week",
+                                             interest_clean$PA003Q05IA == 5 ~ "Every day or almost every day")
+interest_clean$parent_influence <- as.factor(interest_clean$parent_influence)
+
+# Change factor
+interest_clean$PA003Q05IA <- as.factor(interest_clean$PA003Q05IA)
+```
+
+# Recode dummies to 0 and 1
+```{r}
+interest_clean$ST222Q08HA <- as.factor(ifelse(interest_clean$ST222Q08HA == 1, 1, 0))
+interest_clean$ST222Q09HA <- as.factor(ifelse(interest_clean$ST222Q09HA == 1, 1, 0))
+interest_clean$ST221Q05HA <- as.factor(ifelse(interest_clean$ST221Q05HA == 1, 1, 0))
+interest_clean$ST221Q07HA <- as.factor(ifelse(interest_clean$ST221Q07HA == 1, 1, 0))
+interest_clean$ST004D01T <- as.factor(ifelse(interest_clean$ST004D01T == 2, 1, 0))
+interest_clean$SC013Q01TA <- as.factor(ifelse(interest_clean$SC013Q01TA == 1, 1, 0))
+```
+
+# Recode variable ESCS to quartiles
+```{r}
+# Find the distribution in the general sample for BR
+ESCS <- students_clean %>% 
+  select(ESCS) %>% 
+  drop_na()
+
+ESCS$ESCS <- as.numeric(ESCS$ESCS)
+
+quantile(ESCS$ESCS)
+
+interest_clean$SES <- as.factor(
+  case_when(interest_clean$ESCS < -1.9751 ~ "1",
+            interest_clean$ESCS>= -1.9751 & interest_clean$ESCS< -1.1031 ~ "2",
+            interest_clean$ESCS >= -1.1031 & interest_clean$ESCS < -0.2200 ~ "3",
+            interest_clean$ESCS >= -0.2200 ~ "4"))
+```
+
+
+# Frequency of school type (public vs private)
+```{r}
+#Type
+# Sample: BRA
+freq(schools_clean$SC013Q01TA)
+#SAMPLE: interest
+freq(interest_clean$SC013Q01TA)
+
+# N. of schools
+n_distinct(interest_clean$CNTSCHID)
+```
+
+# Checking NA distribution
+```{r}
+freq(interest$ST222Q08HA) # 3328
+freq(interest$ST222Q09HA) # 3348
+freq(interest$ST221Q05HA) # 3732
+freq(interest$ST222Q08HA) # 3328
+freq(interest$PA003Q05IA) # 2006
+sum(is.na(interest$ESCS)) # 238
+freq(interest$AGE) # 0
+freq(interest$SC013Q01TA) # 611
+freq(interest$IMMIG) #551
+
+check.nas <- interest %>% 
+  filter(is.na(ST221Q05HA))
+summary(check.nas)
+freq(check.nas$ST004D01T)
+freq(check.nas$ST222Q08HA)
+freq(check.nas$ST222Q09HA)
+freq(check.nas$ST221Q07HA)
+freq(check.nas$PA003Q05IA)
+freq(check.nas$SC013Q01TA)
+freq(check.nas$IMMIG)
+```
